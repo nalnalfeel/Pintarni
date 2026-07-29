@@ -9,5 +9,5 @@ if (userJson) {
 // Logic Logout
 document.getElementById('logout-btn').addEventListener('click', function() {
     localStorage.removeItem('hris_user'); // Hapus session
-    window.location.href = '/login.html'; // Kembali ke login
+    window.location.href = '/index.html'; // Kembali ke login
 });

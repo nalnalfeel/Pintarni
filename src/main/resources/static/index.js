@@ -3,7 +3,7 @@ const API_URL = '/api/auth/login';
 
 // Cek apakah user sudah login, jika ya langsung lempar ke dashboard
 if (localStorage.getItem('hris_user')) {
-    window.location.href = '/index.html';
+    window.location.href = '/index.html#/dashboard';
 }
 
 document.getElementById('login-form').addEventListener('submit', async function(e) {
