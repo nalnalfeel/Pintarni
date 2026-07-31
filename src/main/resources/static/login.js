@@ -1,18 +1,15 @@
-// Karena frontend dan backend di server yang sama, kita pakai URL relatif
 const API_URL = '/api/auth/login';
 
-// Cek apakah user sudah login, jika ya langsung lempar ke dashboard
+// Cek apakah user sudah login
 if (localStorage.getItem('hris_user')) {
     window.location.href = '/index.html#/dashboard';
 }
 
 document.getElementById('login-form').addEventListener('submit', async function(e) {
     e.preventDefault();
-
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
     const errorMsg = document.getElementById('error-msg');
-
     errorMsg.textContent = '';
 
     try {
@@ -23,14 +20,16 @@ document.getElementById('login-form').addEventListener('submit', async function(
         });
 
         if (response.ok) {
-            const user = await response.json();
-            // Simpan data user ke Local Storage browser
-            localStorage.setItem('hris_user', JSON.stringify(user));
-            // Arahkan ke halaman dashboard
-            window.location.href = '/dashboard.html';
+            const data = await response.json();
+            localStorage.setItem('hris_user', JSON.stringify({
+                token: data.token,
+                username: data.username,
+                role: data.role,
+                fullName: data.username
+            }));
+            window.location.href = '/index.html#/dashboard';
         } else {
-            const text = await response.text();
-            errorMsg.textContent = text;
+            errorMsg.textContent = 'Username atau password salah!';
         }
     } catch (error) {
         console.error(error);

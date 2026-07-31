@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class DataLoader implements CommandLineRunner {
+
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
 
@@ -18,15 +19,17 @@ public class DataLoader implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        // Buat user admin jika database masih kosong
-        if (userRepository.count() == 0) {
-            User admin = new User();
-            admin.setUsername("admin");
-            admin.setPassword(passwordEncoder.encode("admin123")); // Password di-hash
-            admin.setFullName("Administrator HRD");
-            admin.setRole("ADMIN");
-            userRepository.save(admin);
-            System.out.println(">> User 'admin' berhasil dibuat dengan password 'admin123'");
-        }
+        // 1. Paksa hapus data lama yang tersangkut
+        userRepository.deleteAll();
+
+        // 2. Buat akun admin baru dengan password yang dienkripsi dengan benar
+        User admin = new User();
+        admin.setUsername("admin");
+        admin.setPassword(passwordEncoder.encode("admin123"));
+        admin.setFullName("Administrator HRD");
+        admin.setRole("ADMIN");
+        userRepository.save(admin);
+
+        System.out.println(">> Database berhasil di-reset! Password admin adalah admin123");
     }
 }

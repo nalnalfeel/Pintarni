@@ -18,19 +18,25 @@ public class EmployeeController {
         this.employeeRepository = employeeRepository;
     }
 
-    // Read All
+    // 1. Ambil Semua Data Karyawan (Read)
     @GetMapping
     public List<Employee> getAllEmployees() {
         return employeeRepository.findAll();
     }
 
-    // Create
+    // 2. Simpan Data Karyawan Baru (Create)
     @PostMapping
-    public Employee createEmployee(@RequestBody Employee employee) {
-        return employeeRepository.save(employee);
+    public ResponseEntity<?> createEmployee(@RequestBody Employee employee) {
+        // Cek apakah NIP sudah terdaftar sebelumnya
+        try {
+            Employee savedEmployee = employeeRepository.save(employee);
+            return ResponseEntity.ok(savedEmployee);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Gagal menyimpan data. Pastikan NIP bersifat unik.");
+        }
     }
 
-    // Update
+    // 3. Update Data Karyawan (Update)
     @PutMapping("/{id}")
     public ResponseEntity<Employee> updateEmployee(@PathVariable Long id, @RequestBody Employee employeeDetails) {
         return employeeRepository.findById(id)
@@ -39,24 +45,13 @@ public class EmployeeController {
                     employee.setName(employeeDetails.getName());
                     employee.setPosition(employeeDetails.getPosition());
                     employee.setDepartment(employeeDetails.getDepartment());
-                    return ResponseEntity.ok(employeeRepository.save(employee));
+                    Employee updatedEmployee = employeeRepository.save(employee);
+                    return ResponseEntity.ok(updatedEmployee);
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // Contoh modifikasi ringan di EmployeeController.java
-    @PostMapping
-    public ResponseEntity<?> createEmployee(
-            @RequestHeader(value = "X-User-Role", defaultValue = "EMPLOYEE") String userRole,
-            @RequestBody Employee employee) {
-
-        if (!"ADMIN".equals(userRole)) {
-            return ResponseEntity.status(403).body("Akses ditolak: Hanya ADMIN yang dapat menambah karyawan.");
-        }
-        return ResponseEntity.ok(employeeRepository.save(employee));
-    }
-
-    // Delete
+    // 4. Hapus Data Karyawan (Delete)
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteEmployee(@PathVariable Long id) {
         return employeeRepository.findById(id)

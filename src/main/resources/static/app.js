@@ -158,12 +158,15 @@ async function loadEmployees() {
     try {
         const response = await fetch('/api/employees');
         const data = await response.json();
+        headers: getAuthHeaders()
 
         tbody.innerHTML = '';
         if (data.length === 0) {
             tbody.innerHTML = `<tr><td colspan="5" style="padding: 10px; text-align: center;">Belum ada data karyawan</td></tr>`;
             return;
         }
+
+        if (handleUnauthorized(response)) return;
 
         data.forEach(emp => {
             const tr = document.createElement('tr');
@@ -198,15 +201,25 @@ async function saveEmployee() {
     const url = id ? `/api/employees/${id}` : '/api/employees';
 
     try {
-        await fetch(url, {
+        const response = await fetch(url, {
             method: method,
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders(), // Mengirim token JWT yang valid
             body: JSON.stringify(employeeData)
         });
-        resetForm();
-        loadEmployees();
+
+        if (handleUnauthorized(response)) return;
+
+        if (response.ok) {
+            resetForm();
+            loadEmployees(); // Muat ulang tabel data karyawan
+            alert("Data karyawan berhasil disimpan!");
+        } else {
+            const errorText = await response.text();
+            alert("Gagal menyimpan data: " + errorText);
+        }
     } catch (error) {
-        alert("Gagal menyimpan data!");
+        console.error("Error:", error);
+        alert("Terjadi kesalahan koneksi ke server!");
     }
 }
 
@@ -534,8 +547,52 @@ function renderEmployees() {
     });
 }
 
-function downloadExcel() {
-    // Karena ini adalah endpoint download file (GET), kita cukup membuka URL-nya di tab/jendela baru.
-    // Browser akan otomatis mendeteksi header 'attachment' dan memulai pengunduhan file.
-    window.open('/api/reports/employees/excel', '_blank');
+async function downloadExcel() {
+    const user = JSON.parse(localStorage.getItem('hris_user'));
+
+    try {
+        const response = await fetch('/api/reports/employees/excel', {
+            method: 'GET',
+            headers: {
+                'Authorization': 'Bearer ' + user.token // Sisipkan token untuk unduhan
+            }
+        });
+
+        if (handleUnauthorized(response)) return;
+
+        if (response.ok) {
+            const blob = await response.blob();
+            // Buat URL sementara untuk file Blob
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'laporan_data_karyawan_secured.xlsx'; // Nama file
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+        } else {
+            alert("Gagal mengunduh laporan Excel.");
+        }
+    } catch (error) {
+        console.error("Error downloading file:", error);
+    }
+}
+
+function getAuthHeaders() {
+    const user = JSON.parse(localStorage.getItem('hris_user'));
+    return {
+        'Content-Type': 'application/json',
+        'Authorization': user && user.token ? 'Bearer ' + user.token : ''
+    };
+}
+
+function handleUnauthorized(response) {
+    if (response.status === 401) {
+        alert("Sesi Anda telah habis atau tidak valid. Silakan login kembali.");
+        localStorage.removeItem('hris_user');
+        window.location.href = '/index.html';
+        return true;
+    }
+    return false;
 }

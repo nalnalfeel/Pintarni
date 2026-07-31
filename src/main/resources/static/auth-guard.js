@@ -1,5 +1,6 @@
 const userJson = localStorage.getItem('hris_user');
 
 if (!userJson) {
-    window.location.href = '/index.html';
+    // Jika belum login, arahkan ke halaman login (BUKAN ke index.html)
+    window.location.href = '/login.html';
 }

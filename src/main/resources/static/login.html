@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - HRIS</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body style="display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f4f7f6; margin: 0;">
+
+<div class="card" style="width: 100%; max-width: 400px;">
+    <h2 style="text-align: center; color: #2c3e50;">Login HRIS</h2>
+    <p id="error-msg" style="color: red; text-align: center; font-size: 14px;"></p>
+
+    <form id="login-form">
+        <div style="margin-bottom: 15px;">
+            <label for="username" style="display: block; margin-bottom: 5px; font-weight: bold;">Username</label>
+            <input type="text" id="username" required style="width: 100%; padding: 10px; box-sizing: border-box;">
+        </div>
+        <div style="margin-bottom: 20px;">
+            <label for="password" style="display: block; margin-bottom: 5px; font-weight: bold;">Password</label>
+            <input type="password" id="password" required style="width: 100%; padding: 10px; box-sizing: border-box;">
+        </div>
+        <button type="submit" class="btn-primary" style="width: 100%; padding: 12px; font-size: 16px;">Masuk</button>
+    </form>
+</div>
+
+<!-- Panggil logika login -->
+<script src="login.js"></script>
+</body>
+</html>

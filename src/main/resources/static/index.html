@@ -7,25 +7,24 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<!-- Guard untuk cek login -->
+<!-- Guard untuk cek login, jika belum login dilempar ke login.html -->
 <script src="auth-guard.js"></script>
 
 <div class="app-container">
     <!-- SIDEBAR KIRI -->
     <aside class="sidebar">
         <div class="sidebar-header">
-            <h2>🚀 HRIS</h2>
+            <h2> HRIS</h2>
         </div>
         <nav class="sidebar-menu">
             <ul>
-                <li><a href="#/dashboard" class="nav-link active" data-page="dashboard">🏠 Dashboard</a></li>
-                <li><a href="#/employees" class="nav-link" data-page="employees">👥 Data Karyawan</a></li>
-                <li><a href="#/leave" class="nav-link" data-page="leave">🏖️ Manajemen Cuti</a></li>
-                <li><a href="#/attendance" class="nav-link" data-page="attendance">⏰ Absensi</a></li>
+                <li><a href="#/dashboard" class="nav-link active" data-page="dashboard"> Dashboard</a></li>
+                <li><a href="#/employees" class="nav-link" data-page="employees"> Data Karyawan</a></li>
+                <li><a href="#/leave" class="nav-link" data-page="leave"> Manajemen Cuti</a></li>
+                <li><a href="#/attendance" class="nav-link" data-page="attendance"> Absensi</a></li>
             </ul>
         </nav>
     </aside>
-
     <!-- AREA KONTEN KANAN -->
     <div class="main-content">
         <!-- TOP NAVBAR -->
@@ -36,7 +35,6 @@
                 <button class="logout-btn" id="logout-btn">Logout</button>
             </div>
         </header>
-
         <!-- KONTEN HALAMAN AKAN DI-LOAD DI SINI -->
         <main id="app-content" class="content-area">
             <div class="loading">Memuat...</div>
