@@ -28,7 +28,6 @@ function setupUserUI() {
 }
 
 function setupRouter() {
-    // Tangkap semua klik pada link nav-link
     document.body.addEventListener('click', (e) => {
         if (e.target.matches('.nav-link')) {
             e.preventDefault();
@@ -36,8 +35,6 @@ function setupRouter() {
             window.location.hash = href;
         }
     });
-
-    // Dengarkan perubahan hash (untuk tombol Back/Forward browser)
     window.addEventListener('hashchange', handleLocation);
 }
 
@@ -53,7 +50,6 @@ function handleLocation() {
     const hash = window.location.hash || '#/dashboard';
     const path = hash.replace('#', '');
 
-    // Highlight menu yang aktif
     document.querySelectorAll('.nav-link').forEach(link => {
         link.classList.remove('active');
         if(link.getAttribute('href') === hash) {
@@ -61,13 +57,30 @@ function handleLocation() {
         }
     });
 
-    // Render halaman
     const renderFunction = routes[path] || render404;
     renderFunction();
 }
 
-// --- KONTEN MODUL ---
+// --- FUNGSI UTILITAS ---
+function getAuthHeaders() {
+    const user = JSON.parse(localStorage.getItem('hris_user'));
+    return {
+        'Content-Type': 'application/json',
+        'Authorization': user && user.token ? 'Bearer ' + user.token : ''
+    };
+}
 
+function handleUnauthorized(response) {
+    if (response.status === 401) {
+        alert("Sesi Anda telah habis atau tidak valid. Silakan login kembali.");
+        localStorage.removeItem('hris_user');
+        window.location.href = '/index.html';
+        return true;
+    }
+    return false;
+}
+
+// --- KONTEN MODUL DASHBOARD ---
 function renderDashboard() {
     document.getElementById('page-title').textContent = 'Dashboard Utama';
     document.getElementById('app-content').innerHTML = `
@@ -75,32 +88,7 @@ function renderDashboard() {
             <h2>Selamat Datang di Sistem HRIS!</h2>
             <p>Silakan pilih menu di sebelah kiri untuk mengelola data karyawan, cuti, dan absensi.</p>
         </div>
-        <div class="card">
-            <h3>Statistik Singkat</h3>
-            <p>Total Karyawan: <strong>0</strong> | Pengajuan Cuti Pending: <strong>0</strong></p>
-        </div>
     `;
-}
-
-function renderEmployees() {
-    document.getElementById('page-title').textContent = 'Data Karyawan';
-    document.getElementById('app-content').innerHTML = `
-        <div class="card">
-            <h3>Manajemen Karyawan</h3>
-            <p>Ini adalah halaman untuk CRUD Data Karyawan. (Modul ini akan kita bangun pada langkah berikutnya).</p>
-            <button class="btn-primary">+ Tambah Karyawan Baru</button>
-        </div>
-    `;
-}
-
-function renderLeave() {
-    document.getElementById('page-title').textContent = 'Manajemen Cuti';
-    document.getElementById('app-content').innerHTML = `<div class="card"><h3>Modul Cuti</h3><p>Segera hadir...</p></div>`;
-}
-
-function renderAttendance() {
-    document.getElementById('page-title').textContent = 'Absensi';
-    document.getElementById('app-content').innerHTML = `<div class="card"><h3>Modul Absensi</h3><p>Segera hadir...</p></div>`;
 }
 
 function render404() {
@@ -108,15 +96,19 @@ function render404() {
     document.getElementById('app-content').innerHTML = `<div class="card"><h3>Halaman tidak ditemukan.</h3></div>`;
 }
 
-// --- KONTEN MODUL ---
-
+// --- KONTEN MODUL KARYAWAN ---
 function renderEmployees() {
     document.getElementById('page-title').textContent = 'Data Karyawan';
     document.getElementById('app-content').innerHTML = `
         <div class="card">
-            <h3>Manajemen Karyawan</h3>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3>Manajemen Karyawan</h3>
+                <button onclick="downloadExcel()" style="background-color: #217346; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;">
+                    &#128196; Unduh Excel
+                </button>
+            </div>
             
-            <form id="employee-form" style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+            <form id="employee-form" style="display: flex; gap: 10px; margin-top: 15px; margin-bottom: 20px; flex-wrap: wrap;">
                 <input type="hidden" id="emp-id">
                 <input type="text" id="emp-nip" placeholder="NIP" required style="padding: 8px;">
                 <input type="text" id="emp-name" placeholder="Nama Lengkap" required style="padding: 8px;">
@@ -128,7 +120,7 @@ function renderEmployees() {
 
             <table width="100%" style="border-collapse: collapse; text-align: left;">
                 <thead>
-                    <tr style="background: #f4f7f6; border-bottom: 2px solid #ddd;">
+                    <tr style="background: #2c3e50; color: white; border-bottom: 2px solid #ddd;">
                         <th style="padding: 10px;">NIP</th>
                         <th style="padding: 10px;">Nama</th>
                         <th style="padding: 10px;">Jabatan</th>
@@ -151,22 +143,23 @@ function renderEmployees() {
     });
 }
 
-// --- FUNGSI CRUD KARYAWAN ---
-
 async function loadEmployees() {
     const tbody = document.getElementById('employee-table-body');
     try {
-        const response = await fetch('/api/employees');
+        const response = await fetch('/api/employees', {
+            method: 'GET',
+            headers: getAuthHeaders() // Perbaikan Header
+        });
+
+        if (handleUnauthorized(response)) return;
+
         const data = await response.json();
-        headers: getAuthHeaders()
 
         tbody.innerHTML = '';
         if (data.length === 0) {
             tbody.innerHTML = `<tr><td colspan="5" style="padding: 10px; text-align: center;">Belum ada data karyawan</td></tr>`;
             return;
         }
-
-        if (handleUnauthorized(response)) return;
 
         data.forEach(emp => {
             const tr = document.createElement('tr');
@@ -184,7 +177,8 @@ async function loadEmployees() {
             tbody.appendChild(tr);
         });
     } catch (error) {
-        tbody.innerHTML = `<tr><td colspan="5">Gagal memuat data.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" style="color: red;">Gagal memuat data.</td></tr>`;
+        console.error("Gagal Memuat Data Karyawan", error);
     }
 }
 
@@ -203,7 +197,7 @@ async function saveEmployee() {
     try {
         const response = await fetch(url, {
             method: method,
-            headers: getAuthHeaders(), // Mengirim token JWT yang valid
+            headers: getAuthHeaders(),
             body: JSON.stringify(employeeData)
         });
 
@@ -211,7 +205,7 @@ async function saveEmployee() {
 
         if (response.ok) {
             resetForm();
-            loadEmployees(); // Muat ulang tabel data karyawan
+            loadEmployees();
             alert("Data karyawan berhasil disimpan!");
         } else {
             const errorText = await response.text();
@@ -234,7 +228,11 @@ function editEmployee(id, nip, name, position, dept) {
 async function deleteEmployee(id) {
     if(confirm('Apakah Anda yakin ingin menghapus karyawan ini?')) {
         try {
-            await fetch(`/api/employees/${id}`, { method: 'DELETE' });
+            const response = await fetch(`/api/employees/${id}`, {
+                method: 'DELETE',
+                headers: getAuthHeaders()
+            });
+            if (handleUnauthorized(response)) return;
             loadEmployees();
         } catch (error) {
             alert("Gagal menghapus data!");
@@ -250,8 +248,35 @@ function resetForm() {
     document.getElementById('emp-dept').value = '';
 }
 
-// --- KONTEN MODUL ABSENSI ---
+async function downloadExcel() {
+    const user = JSON.parse(localStorage.getItem('hris_user'));
+    try {
+        const response = await fetch('/api/reports/employees/excel', {
+            method: 'GET',
+            headers: { 'Authorization': 'Bearer ' + user.token }
+        });
 
+        if (handleUnauthorized(response)) return;
+
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'laporan_data_karyawan_secured.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+        } else {
+            alert("Gagal mengunduh laporan Excel.");
+        }
+    } catch (error) {
+        console.error("Error downloading file:", error);
+    }
+}
+
+// --- KONTEN MODUL ABSENSI ---
 function renderAttendance() {
     document.getElementById('page-title').textContent = 'Absensi Harian';
     document.getElementById('app-content').innerHTML = `
@@ -293,12 +318,16 @@ function renderAttendance() {
     });
 }
 
-// --- FUNGSI CRUD ABSENSI ---
-
 async function loadAttendances() {
     const tbody = document.getElementById('attendance-table-body');
     try {
-        const response = await fetch('/api/attendance');
+        const response = await fetch('/api/attendance', {
+            method: 'GET',
+            headers: getAuthHeaders() // Perbaikan Header
+        });
+
+        if (handleUnauthorized(response)) return;
+
         const data = await response.json();
 
         tbody.innerHTML = '';
@@ -311,7 +340,6 @@ async function loadAttendances() {
             const checkOutTime = att.checkOut ? att.checkOut.substring(0,8) : '-';
             const checkInTime = att.checkIn ? att.checkIn.substring(0,8) : '-';
 
-            // Tombol checkout hanya muncul jika belum checkout
             const actionBtn = !att.checkOut
                 ? `<button onclick="doCheckOut(${att.id})" style="background:#e67e22; color:white; border:none; padding:5px 10px; cursor:pointer;">Check Out</button>`
                 : `<span style="color: #27ae60; font-weight: bold;">Selesai</span>`;
@@ -335,13 +363,14 @@ async function loadAttendances() {
 
 async function doCheckIn() {
     const nip = document.getElementById('att-nip').value;
-
     try {
         const response = await fetch('/api/attendance/check-in', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders(), // Perbaikan Header
             body: JSON.stringify({ nip: nip })
         });
+
+        if (handleUnauthorized(response)) return;
 
         if (response.ok) {
             document.getElementById('att-nip').value = '';
@@ -358,7 +387,12 @@ async function doCheckIn() {
 async function doCheckOut(id) {
     if(confirm('Apakah Anda yakin ingin Check Out sekarang?')) {
         try {
-            await fetch(`/api/attendance/check-out/${id}`, { method: 'PUT' });
+            const response = await fetch(`/api/attendance/check-out/${id}`, {
+                method: 'PUT',
+                headers: getAuthHeaders() // Perbaikan Header
+            });
+
+            if (handleUnauthorized(response)) return;
             loadAttendances();
         } catch (error) {
             alert("Gagal melakukan Check Out!");
@@ -367,7 +401,6 @@ async function doCheckOut(id) {
 }
 
 // --- KONTEN MODUL MANAJEMEN CUTI ---
-
 function renderLeave() {
     const user = JSON.parse(localStorage.getItem('hris_user'));
     const isAdmin = user && user.role === 'ADMIN';
@@ -376,7 +409,14 @@ function renderLeave() {
     document.getElementById('page-title').textContent = 'Manajemen Cuti';
     document.getElementById('app-content').innerHTML = `
     <div class="card">
-        <!-- ... form cuti tetap sama ... -->
+        <form id="leave-form" style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+            <input type="text" id="leave-nip" placeholder="NIP" required style="padding: 8px;">
+            <input type="date" id="leave-start" required style="padding: 8px;">
+            <input type="date" id="leave-end" required style="padding: 8px;">
+            <input type="text" id="leave-reason" placeholder="Alasan Cuti" required style="padding: 8px; flex: 1;">
+            <button type="submit" class="btn-primary" style="margin: 0;">Ajukan Cuti</button>
+        </form>
+
         <table width="100%" style="border-collapse: collapse; text-align: left; margin-top: 15px; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-radius: 8px; overflow: hidden;">
             <thead>
                 <tr style="background: #2c3e50; color: white;">
@@ -393,7 +433,7 @@ function renderLeave() {
             </tbody>
         </table>
     </div>
-`;
+    `;
 
     loadLeaves();
 
@@ -409,7 +449,13 @@ async function loadLeaves() {
     const isAdmin = user && user.role === 'ADMIN';
 
     try {
-        const response = await fetch('/api/leaves');
+        const response = await fetch('/api/leaves', {
+            method: 'GET',
+            headers: getAuthHeaders() // Perbaikan Header
+        });
+
+        if (handleUnauthorized(response)) return;
+
         const data = await response.json();
 
         tbody.innerHTML = '';
@@ -419,7 +465,6 @@ async function loadLeaves() {
         }
 
         data.forEach(leave => {
-            // Pewarnaan status menggunakan badge UI
             let statusBadge = '';
             if (leave.status === 'APPROVED') {
                 statusBadge = `<span style="background: #2ecc71; color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">DISETUJUI</span>`;
@@ -468,18 +513,18 @@ async function submitLeave() {
     try {
         const response = await fetch('/api/leaves', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders(), // Perbaikan Header
             body: JSON.stringify(leaveData)
         });
 
+        if (handleUnauthorized(response)) return;
+
         if(response.ok) {
-            // Reset form
             document.getElementById('leave-nip').value = '';
             document.getElementById('leave-start').value = '';
             document.getElementById('leave-end').value = '';
             document.getElementById('leave-reason').value = '';
-
-            loadLeaves(); // Refresh tabel
+            loadLeaves();
         }
     } catch (error) {
         alert("Gagal mengajukan cuti!");
@@ -489,110 +534,15 @@ async function submitLeave() {
 async function updateLeaveStatus(id, status) {
     if(confirm(`Apakah Anda yakin ingin mengubah status cuti ini menjadi ${status}?`)) {
         try {
-            await fetch(`/api/leaves/${id}/status?status=${status}`, {
-                method: 'PUT'
+            const response = await fetch(`/api/leaves/${id}/status?status=${status}`, {
+                method: 'PUT',
+                headers: getAuthHeaders() // Perbaikan Header
             });
-            loadLeaves(); // Refresh tabel setelah update
+
+            if (handleUnauthorized(response)) return;
+            loadLeaves();
         } catch (error) {
             alert("Gagal merubah status cuti!");
         }
     }
-}
-
-function renderEmployees() {
-    document.getElementById('page-title').textContent = 'Data Karyawan';
-    document.getElementById('app-content').innerHTML = `
-        <div class="card">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h3>Manajemen Karyawan</h3>
-                <!-- Tombol Download Excel -->
-                <button onclick="downloadExcel()" style="background-color: #217346; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;">
-                    &#128196; Unduh Excel
-                </button>
-            </div>
-            
-            <form id="employee-form" style="display: flex; gap: 10px; margin-top: 15px; margin-bottom: 20px; flex-wrap: wrap;">
-                <input type="hidden" id="emp-id">
-                <input type="text" id="emp-nip" placeholder="NIP" required style="padding: 8px;">
-                <input type="text" id="emp-name" placeholder="Nama Lengkap" required style="padding: 8px;">
-                <input type="text" id="emp-position" placeholder="Jabatan" required style="padding: 8px;">
-                <input type="text" id="emp-dept" placeholder="Departemen" required style="padding: 8px;">
-                <button type="submit" class="btn-primary" style="margin: 0;">Simpan</button>
-                <button type="button" onclick="resetForm()" style="padding: 8px;">Batal</button>
-            </form>
-
-            <table width="100%" style="border-collapse: collapse; text-align: left;">
-                <!-- thead dan tbody sama seperti sebelumnya -->
-                <thead>
-                    <tr style="background: #2c3e50; color: white; border-bottom: 2px solid #ddd;">
-                        <th style="padding: 10px;">NIP</th>
-                        <th style="padding: 10px;">Nama</th>
-                        <th style="padding: 10px;">Jabatan</th>
-                        <th style="padding: 10px;">Departemen</th>
-                        <th style="padding: 10px;">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody id="employee-table-body">
-                    <tr><td colspan="5" style="padding: 10px;">Memuat data...</td></tr>
-                </tbody>
-            </table>
-        </div>
-    `;
-
-    loadEmployees();
-
-    document.getElementById('employee-form').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        await saveEmployee();
-    });
-}
-
-async function downloadExcel() {
-    const user = JSON.parse(localStorage.getItem('hris_user'));
-
-    try {
-        const response = await fetch('/api/reports/employees/excel', {
-            method: 'GET',
-            headers: {
-                'Authorization': 'Bearer ' + user.token // Sisipkan token untuk unduhan
-            }
-        });
-
-        if (handleUnauthorized(response)) return;
-
-        if (response.ok) {
-            const blob = await response.blob();
-            // Buat URL sementara untuk file Blob
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'laporan_data_karyawan_secured.xlsx'; // Nama file
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            window.URL.revokeObjectURL(url);
-        } else {
-            alert("Gagal mengunduh laporan Excel.");
-        }
-    } catch (error) {
-        console.error("Error downloading file:", error);
-    }
-}
-
-function getAuthHeaders() {
-    const user = JSON.parse(localStorage.getItem('hris_user'));
-    return {
-        'Content-Type': 'application/json',
-        'Authorization': user && user.token ? 'Bearer ' + user.token : ''
-    };
-}
-
-function handleUnauthorized(response) {
-    if (response.status === 401) {
-        alert("Sesi Anda telah habis atau tidak valid. Silakan login kembali.");
-        localStorage.removeItem('hris_user');
-        window.location.href = '/index.html';
-        return true;
-    }
-    return false;
 }
