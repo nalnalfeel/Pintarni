@@ -6,22 +6,27 @@
     <title>Login - HRIS</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body style="display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f4f7f6; margin: 0;">
+<body class="login-wrapper">
 
-<div class="card" style="width: 100%; max-width: 400px;">
-    <h2 style="text-align: center; color: #2c3e50;">Login HRIS</h2>
-    <p id="error-msg" style="color: red; text-align: center; font-size: 14px;"></p>
+<div class="card login-card">
+    <div class="login-logo"><h1 style="margin:0; color:#2c3e50;">HRIS</h1></div>
+    <h2 style="text-align: center; color: #2c3e50; margin-bottom:8px;">Login ke HRIS</h2>
+    <p id="error-msg" class="error-msg"></p>
 
     <form id="login-form">
-        <div style="margin-bottom: 15px;">
-            <label for="username" style="display: block; margin-bottom: 5px; font-weight: bold;">Username</label>
-            <input type="text" id="username" required style="width: 100%; padding: 10px; box-sizing: border-box;">
+        <div class="form-row">
+            <label for="username" style="display: block; margin-bottom: 6px; font-weight: 600;">Username</label>
+            <input type="text" id="username" required>
         </div>
-        <div style="margin-bottom: 20px;">
-            <label for="password" style="display: block; margin-bottom: 5px; font-weight: bold;">Password</label>
-            <input type="password" id="password" required style="width: 100%; padding: 10px; box-sizing: border-box;">
+        <div class="form-row">
+            <label for="password" style="display: block; margin-bottom: 6px; font-weight: 600;">Password</label>
+            <input type="password" id="password" required>
         </div>
-        <button type="submit" class="btn-primary" style="width: 100%; padding: 12px; font-size: 16px;">Masuk</button>
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+            <label style="font-size:14px; color:#7f8c8d;"><input type="checkbox" id="remember"> Ingat saya</label>
+            <a href="#" class="small-link">Lupa password?</a>
+        </div>
+        <button type="submit" class="btn-primary" style="width:100%; padding:12px; font-size:16px; margin-top:18px;">Masuk</button>
     </form>
 </div>
 
