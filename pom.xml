@@ -40,6 +40,13 @@
         </dependency>
             <!-- Spring Web, Data JPA, MySQL Driver, Lombok (sudah ada dari setup awal) -->
 
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <scope>runtime</scope>
+            <optional>true</optional>
+        </dependency>
+
             <!-- Tambahkan ini untuk enkripsi password -->
         <dependency>
             <groupId>org.springframework.security</groupId>
